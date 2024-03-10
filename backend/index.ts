@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { appendFile, writeFile, readFile, mkdir } from 'node:fs/promises';
+import { appendFile, writeFile, readFile, mkdir, stat } from 'node:fs/promises';
 
 const PORT = 3000;
 const whiteList = ['http://localhost:5173'];
@@ -45,8 +45,7 @@ app.post('/file', async (req, res) => {
 // Read a file
 app.get('/file', async (req, res) => {
   const { fileName, fileExtension } = req.query;
-  const dirPath = './tmp';
-  const filePath = `${dirPath}/${fileName}.${fileExtension}`;
+  const filePath = `./tmp/${fileName}.${fileExtension}`;
   const abortController = new AbortController();
 
   try {
@@ -65,11 +64,27 @@ app.get('/file', async (req, res) => {
   res.status(200).json({ result: 'File read' });
 });
 
+// Get the inode of a file
+app.get('/inode', async (req, res) => {
+  const { fileName, fileExtension } = req.query;
+  const filePath = `./tmp/${fileName}.${fileExtension}`;
+
+  try {
+    const info = await stat(filePath);
+    console.log('inode-info', info);
+
+    res.status(200).json({ result: info.ino });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
 // Append content to a file
 app.post('/append-file', async (req, res) => {
   const { fileName, fileExtension, content } = req.body;
-  const dirPath = './tmp';
-  const filePath = `${dirPath}/${fileName}.${fileExtension}`;
+  const filePath = `./tmp/${fileName}.${fileExtension}`;
 
   try {
     await appendFile(filePath, content);

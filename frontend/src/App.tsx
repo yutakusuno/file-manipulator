@@ -77,6 +77,26 @@ const App = () => {
     }
   };
 
+  const handleFsGetINode = async (): Promise<void> => {
+    console.log('handleFsGetINode', fileName, fileExtension);
+    const query = `?fileName=${fileName}&fileExtension=${fileExtension}`;
+
+    try {
+      const response = await fetch(`${baseUrl}/inode${query}`);
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      setResult(data.result);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error:', error.message);
+      }
+    }
+  };
+
   return (
     <div>
       <input
@@ -104,6 +124,7 @@ const App = () => {
       <button onClick={handleFsWrite}>Create </button>
       <button onClick={handleFsRead}>Read Content</button>
       <button onClick={handleFsAppend}>Append Content</button>
+      <button onClick={handleFsGetINode}>Read Inode</button>
       <div>Result: {result}</div>
     </div>
   );
