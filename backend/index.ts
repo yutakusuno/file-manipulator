@@ -16,30 +16,53 @@ app.use(express.json());
 // fs: https://nodejs.org/api/fs.html
 // Memory leak countermeasure with AbortController: https://nodejs.org/api/globals.html
 // import.meta: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta
+
+// Create a file
 app.post('/file', async (req, res) => {
   const { fileName, fileExtension, content } = req.body;
   const dirPath = './tmp';
+  const filePath = `${dirPath}/${fileName}.${fileExtension}`;
+  const dir = new URL(dirPath, import.meta.url);
+  const abortController = new AbortController();
 
   try {
-    const dir = new URL(dirPath, import.meta.url);
     await mkdir(dir, { recursive: true });
 
-    const abortController = new AbortController();
-    await writeFile(`${dirPath}/${fileName}.${fileExtension}`, content, {
-      signal: abortController.signal,
-    });
-    const contents = await readFile(`${dirPath}/${fileName}.${fileExtension}`, {
+    await writeFile(filePath, content, {
       signal: abortController.signal,
     });
 
     abortController.abort();
 
-    res.json({ result: contents.toString() });
+    res.status(204).end();
   } catch (error: unknown) {
     if (error instanceof Error) {
       res.status(500).json({ error: error.message });
     }
   }
+});
+
+// Read a file
+app.get('/file', async (req, res) => {
+  const { fileName, fileExtension } = req.query;
+  const dirPath = './tmp';
+  const filePath = `${dirPath}/${fileName}.${fileExtension}`;
+  const abortController = new AbortController();
+
+  try {
+    const contents = await readFile(filePath, {
+      signal: abortController.signal,
+    });
+
+    abortController.abort();
+
+    res.status(200).json({ result: contents.toString() });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+  res.status(200).json({ result: 'File read' });
 });
 
 app.listen(PORT, () => {

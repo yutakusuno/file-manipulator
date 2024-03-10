@@ -21,12 +21,31 @@ const App = () => {
         body: JSON.stringify({ fileName, fileExtension, content }),
       });
 
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      setResult('File created');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error:', error.message);
+      }
+    }
+  };
+
+  const handleFsRead = async (): Promise<void> => {
+    console.log('handleFsRead', fileName, fileExtension);
+    const query = `?fileName=${fileName}&fileExtension=${fileExtension}`;
+
+    try {
+      const response = await fetch(`${baseUrl}/file${query}`);
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
       const data = await response.json();
       setResult(data.result);
-
-      // Reset the form
-      setFileName('');
-      setContent('');
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Error:', error.message);
@@ -58,8 +77,8 @@ const App = () => {
         onChange={(e) => setContent(e.target.value)}
       />
       <br />
-      <button onClick={handleFsWrite}>File I/O</button>
-      <br />
+      <button onClick={handleFsWrite}>Create </button>
+      <button onClick={handleFsRead}>Read Content</button>
       <div>Result: {result}</div>
     </div>
   );
