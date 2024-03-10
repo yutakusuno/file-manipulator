@@ -1,35 +1,68 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+const baseUrl = 'http://localhost:3000';
+
+const App = () => {
+  const [fileName, setFileName] = useState<string>('');
+  const [content, setContent] = useState<string>('');
+  const [fileExtension, setFileExtension] = useState<string>('txt');
+  const [result, setResult] = useState<string>('');
+
+  const handleFsWrite = async (): Promise<void> => {
+    console.log('handleFsWrite', fileName, fileExtension, content);
+
+    try {
+      const response = await fetch(`${baseUrl}/file`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileName, fileExtension, content }),
+      });
+
+      const data = await response.json();
+      setResult(data.result);
+
+      // Reset the form
+      setFileName('');
+      setContent('');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error:', error.message);
+      }
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div>
+      <input
+        type='text'
+        placeholder='File Name'
+        value={fileName}
+        onChange={(e) => setFileName(e.target.value)}
+      />
+      <select
+        name='file-extension'
+        id='file-extension'
+        onChange={(e) => setFileExtension(e.target.value)}
+      >
+        <option value='txt'>txt</option>
+        <option value='json'>json</option>
+        <option value='md'>md</option>
+      </select>
+      <br />
+      <textarea
+        placeholder='Content'
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+      />
+      <br />
+      <button onClick={handleFsWrite}>File I/O</button>
+      <br />
+      <div>Result: {result}</div>
+    </div>
+  );
+};
 
-export default App
+export default App;
