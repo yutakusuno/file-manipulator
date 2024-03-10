@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { writeFile, readFile, mkdir } from 'node:fs/promises';
+import { appendFile, writeFile, readFile, mkdir } from 'node:fs/promises';
 
 const PORT = 3000;
 const whiteList = ['http://localhost:5173'];
@@ -63,6 +63,23 @@ app.get('/file', async (req, res) => {
     }
   }
   res.status(200).json({ result: 'File read' });
+});
+
+// Append content to a file
+app.post('/append-file', async (req, res) => {
+  const { fileName, fileExtension, content } = req.body;
+  const dirPath = './tmp';
+  const filePath = `${dirPath}/${fileName}.${fileExtension}`;
+
+  try {
+    await appendFile(filePath, content);
+
+    res.status(204).end();
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 });
 
 app.listen(PORT, () => {

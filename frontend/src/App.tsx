@@ -53,6 +53,30 @@ const App = () => {
     }
   };
 
+  const handleFsAppend = async (): Promise<void> => {
+    console.log('handleFsAppend', fileName, fileExtension, content);
+
+    try {
+      const response = await fetch(`${baseUrl}/append-file`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fileName, fileExtension, content }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      setResult('Content appended');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error:', error.message);
+      }
+    }
+  };
+
   return (
     <div>
       <input
@@ -79,6 +103,7 @@ const App = () => {
       <br />
       <button onClick={handleFsWrite}>Create </button>
       <button onClick={handleFsRead}>Read Content</button>
+      <button onClick={handleFsAppend}>Append Content</button>
       <div>Result: {result}</div>
     </div>
   );
