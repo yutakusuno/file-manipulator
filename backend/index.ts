@@ -1,5 +1,12 @@
 import express from 'express';
 import cors from 'cors';
+import {
+  writeFileSync,
+  readFileSync,
+  mkdirSync,
+  appendFileSync,
+  statSync,
+} from 'node:fs';
 import { appendFile, writeFile, readFile, mkdir, stat } from 'node:fs/promises';
 
 const PORT = 3000;
@@ -18,7 +25,9 @@ app.use(express.json());
 // import.meta: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import.meta
 
 // Create a file
-app.post('/file', async (req, res) => {
+app.post('/non-blocking-io/file', async (req, res) => {
+  console.log('non-blocking-io/file', req.body);
+
   const { fileName, fileExtension, content } = req.body;
   const dirPath = './tmp';
   const filePath = `${dirPath}/${fileName}.${fileExtension}`;
@@ -43,7 +52,9 @@ app.post('/file', async (req, res) => {
 });
 
 // Read a file
-app.get('/file', async (req, res) => {
+app.get('/non-blocking-io/file', async (req, res) => {
+  console.log('non-blocking-io/file', req.query);
+
   const { fileName, fileExtension } = req.query;
   const filePath = `./tmp/${fileName}.${fileExtension}`;
   const abortController = new AbortController();
@@ -65,7 +76,9 @@ app.get('/file', async (req, res) => {
 });
 
 // Get the inode of a file
-app.get('/inode', async (req, res) => {
+app.get('/non-blocking-io/inode', async (req, res) => {
+  console.log('non-blocking-io/inode', req.query);
+
   const { fileName, fileExtension } = req.query;
   const filePath = `./tmp/${fileName}.${fileExtension}`;
 
@@ -82,7 +95,9 @@ app.get('/inode', async (req, res) => {
 });
 
 // Append content to a file
-app.post('/append-file', async (req, res) => {
+app.post('/non-blocking-io/append-file', async (req, res) => {
+  console.log('non-blocking-io/append-file', req.body);
+
   const { fileName, fileExtension, content } = req.body;
   const filePath = `./tmp/${fileName}.${fileExtension}`;
 
@@ -90,6 +105,80 @@ app.post('/append-file', async (req, res) => {
     await appendFile(filePath, content);
 
     res.status(204).end();
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
+// Create a file with blocking I/O
+app.post('/blocking-io/file', (req, res) => {
+  console.log('blocking-io/file', req.body);
+
+  const { fileName, fileExtension, content } = req.body;
+  const dirPath = './tmp2';
+  const filePath = `${dirPath}/${fileName}.${fileExtension}`;
+  const dir = new URL(dirPath, import.meta.url);
+
+  try {
+    mkdirSync(dir, { recursive: true });
+
+    writeFileSync(filePath, content);
+    res.status(204).end();
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
+// Read a file with blocking I/O
+app.get('/blocking-io/file', (req, res) => {
+  console.log('blocking-io/file', req.query);
+
+  const { fileName, fileExtension } = req.query;
+  const filePath = `./tmp2/${fileName}.${fileExtension}`;
+
+  try {
+    const data = readFileSync(filePath);
+    res.status(200).json({ result: data.toString() });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
+// Append content to a file with blocking I/O
+app.post('/blocking-io/append-file', (req, res) => {
+  console.log('blocking-io/append-file', req.body);
+
+  const { fileName, fileExtension, content } = req.body;
+  const filePath = `./tmp2/${fileName}.${fileExtension}`;
+
+  try {
+    appendFileSync(filePath, content);
+    res.status(204).end();
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
+// Get the inode of a file with blocking I/O
+app.get('/blocking-io/inode', (req, res) => {
+  console.log('blocking-io/inode', req.query);
+
+  const { fileName, fileExtension } = req.query;
+  const filePath = `./tmp2/${fileName}.${fileExtension}`;
+
+  try {
+    const info = statSync(filePath);
+    console.log('inode-info', info);
+
+    res.status(200).json({ result: info.ino });
   } catch (error: unknown) {
     if (error instanceof Error) {
       res.status(500).json({ error: error.message });
